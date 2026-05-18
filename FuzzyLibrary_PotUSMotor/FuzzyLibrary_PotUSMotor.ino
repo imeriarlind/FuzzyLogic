@@ -8,6 +8,10 @@ const uint8_t US_ECHO_PIN = 6;
 const uint8_t MOTOR_PWM_PIN = 9;
 const uint8_t MOTOR_IN1_PIN = 10;
 const uint8_t MOTOR_IN2_PIN = 11;
+const uint8_t MOTOR_CCW_IN1_STATE = HIGH;
+const uint8_t MOTOR_CCW_IN2_STATE = LOW;
+const uint8_t MOTOR_CW_IN1_STATE = LOW;
+const uint8_t MOTOR_CW_IN2_STATE = HIGH;
 
 const float MOTOR_PWM_FREQUENCY = 245.5f;
 
@@ -54,17 +58,17 @@ void setupFuzzy(){
   motorNoRotation = fuzzy.addTerm(motor);
   motorCW = fuzzy.addTerm(motor);
 
-  fuzzy.addPointsTo(potHighAngle, 100.0f, 100.0f, 100.0f, 135.0f);
-  fuzzy.addPointsTo(potBalancedAngle, 110.0f, 135.0f, 135.0f, 160.0f);
-  fuzzy.addPointsTo(potLowAngle, 135.0f, 170.0f, 170.0f, 170.0f);
+  fuzzy.addPointsTo(potHighAngle, 100.0f, 100.0f, 100.0f, 130.0f);
+  fuzzy.addPointsTo(potBalancedAngle, 120.0f, 130.0f, 140.0f, 150.0f);
+  fuzzy.addPointsTo(potLowAngle, 140.0f, 170.0f, 170.0f, 170.0f);
 
-  fuzzy.addPointsTo(usLowDistance, 4.0f, 4.0f, 4.0f, 20.5f);
-  fuzzy.addPointsTo(usMediumDistance, 10.0f, 20.5f, 20.5f, 30.0f);
-  fuzzy.addPointsTo(usHighDistance, 20.5f, 34.0f, 34.0f, 34.0f);
+  fuzzy.addPointsTo(usLowDistance, 4.0f, 4.0f, 4.0f, 18.5f);
+  fuzzy.addPointsTo(usMediumDistance, 15.0f, 19.5f, 22.5f, 27.0f);
+  fuzzy.addPointsTo(usHighDistance, 22.5f, 34.0f, 34.0f, 34.0f);
 
-  fuzzy.addPointsTo(motorCCW, -35.0f, -35.0f, -35.0f, 30.0f);
-  fuzzy.addPointsTo(motorNoRotation, -35.0f, 30.0f, 30.0f, 35.0f);
-  fuzzy.addPointsTo(motorCW, 30.0f, 35.0f, 35.0f, 35.0f);
+  fuzzy.addPointsTo(motorCCW, MOTOR_MIN, MOTOR_MIN, MOTOR_MIN, -30.0f);
+  fuzzy.addPointsTo(motorNoRotation, -MOTOR_DEADBAND, 0.0f, 0.0f, MOTOR_DEADBAND);
+  fuzzy.addPointsTo(motorCW, 30.0f, MOTOR_MAX, MOTOR_MAX, MOTOR_MAX);
 
   fuzzy.createRule(pot, potHighAngle, us, usLowDistance, motor, motorCW);
   fuzzy.createRule(pot, potBalancedAngle, us, usLowDistance, motor, motorCW);
@@ -108,11 +112,11 @@ void setMotorOutput(float motorSpeed){
   pwmValue = constrain(pwmValue, 0, 255);
 
   if(clampedSpeed > MOTOR_DEADBAND){
-    digitalWrite(MOTOR_IN1_PIN, LOW);
-    digitalWrite(MOTOR_IN2_PIN, HIGH);
+    digitalWrite(MOTOR_IN1_PIN, MOTOR_CW_IN1_STATE);
+    digitalWrite(MOTOR_IN2_PIN, MOTOR_CW_IN2_STATE);
   } else if(clampedSpeed < -MOTOR_DEADBAND){
-    digitalWrite(MOTOR_IN1_PIN, HIGH);
-    digitalWrite(MOTOR_IN2_PIN, LOW);
+    digitalWrite(MOTOR_IN1_PIN, MOTOR_CCW_IN1_STATE);
+    digitalWrite(MOTOR_IN2_PIN, MOTOR_CCW_IN2_STATE);
   } else {
     digitalWrite(MOTOR_IN1_PIN, LOW);
     digitalWrite(MOTOR_IN2_PIN, LOW);
