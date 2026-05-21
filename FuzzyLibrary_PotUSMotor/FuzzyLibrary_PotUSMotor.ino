@@ -13,15 +13,17 @@ const uint8_t MOTOR_CCW_IN2_STATE = LOW;
 const uint8_t MOTOR_CW_IN1_STATE = LOW;
 const uint8_t MOTOR_CW_IN2_STATE = HIGH;
 
-const float MOTOR_PWM_FREQUENCY = 245.5f;
+const float MOTOR_PWM_FREQUENCY = 250.5f;
 
-const float POT_MIN = 100.0f;
-const float POT_MAX = 170.0f;
+const float POT_MIN = 110.0f;
+const float POT_MAX = 180.0f;
 const float US_MIN = 4.0f;
-const float US_MAX = 34.0f;
+const float US_MAX = 41.0f;
 const float MOTOR_MIN = -35.0f;
 const float MOTOR_MAX = 35.0f;
 const float MOTOR_DEADBAND = 1.0f;
+const uint8_t MOTOR_MIN_DUTY_CYCLE = 40;
+const uint8_t MOTOR_MAX_DUTY_CYCLE = 60;
 
 Fuzzy fuzzy;
 uint8_t pot;
@@ -58,13 +60,13 @@ void setupFuzzy(){
   motorNoRotation = fuzzy.addTerm(motor);
   motorCW = fuzzy.addTerm(motor);
 
-  fuzzy.addPointsTo(potHighAngle, 100.0f, 100.0f, 100.0f, 130.0f);
-  fuzzy.addPointsTo(potBalancedAngle, 120.0f, 130.0f, 140.0f, 150.0f);
-  fuzzy.addPointsTo(potLowAngle, 140.0f, 170.0f, 170.0f, 170.0f);
+  fuzzy.addPointsTo(potHighAngle, 110.0f, 110.0f, 110.0f, 140.0f);
+  fuzzy.addPointsTo(potBalancedAngle, 120.0f, 150.0f, 160.0f, 170.0f);
+  fuzzy.addPointsTo(potLowAngle, 165.0f, 165.0f, 165.0f, 185.0f);
 
   fuzzy.addPointsTo(usLowDistance, 4.0f, 4.0f, 4.0f, 18.5f);
   fuzzy.addPointsTo(usMediumDistance, 15.0f, 19.5f, 22.5f, 27.0f);
-  fuzzy.addPointsTo(usHighDistance, 22.5f, 34.0f, 34.0f, 34.0f);
+  fuzzy.addPointsTo(usHighDistance, 22.5f, 41.0f, 41.0f, 41.0f);
 
   fuzzy.addPointsTo(motorCCW, MOTOR_MIN, MOTOR_MIN, MOTOR_MIN, -30.0f);
   fuzzy.addPointsTo(motorNoRotation, -MOTOR_DEADBAND, 0.0f, 0.0f, MOTOR_DEADBAND);
@@ -85,8 +87,7 @@ void setupFuzzy(){
 
 float readPotAngle(){
   int rawValue = analogRead(POT_PIN);
-  float angle = POT_MIN + (static_cast<float>(rawValue) / 1023.0f) * (POT_MAX - POT_MIN);
-  return constrain(angle, POT_MIN, POT_MAX);
+  return constrain(static_cast<float>(rawValue), POT_MIN, POT_MAX);
 }
 
 float readUltrasonicDistance(){
@@ -108,8 +109,9 @@ float readUltrasonicDistance(){
 void setMotorOutput(float motorSpeed){
   float clampedSpeed = constrain(motorSpeed, MOTOR_MIN, MOTOR_MAX);
   float speedAbs = fabsf(clampedSpeed);
-  int pwmValue = static_cast<int>((speedAbs / MOTOR_MAX) * 255.0f);
-  pwmValue = constrain(pwmValue, 0, 255);
+  int speedValue = constrain(static_cast<int>(roundf(speedAbs)), 0, static_cast<int>(MOTOR_MAX));
+  int dutyCycle = map(speedValue, 0, static_cast<int>(MOTOR_MAX), MOTOR_MIN_DUTY_CYCLE, MOTOR_MAX_DUTY_CYCLE);
+  int pwmValue = map(dutyCycle, 0, 100, 0, 255);
 
   if(clampedSpeed > MOTOR_DEADBAND){
     digitalWrite(MOTOR_IN1_PIN, MOTOR_CW_IN1_STATE);
@@ -121,9 +123,9 @@ void setMotorOutput(float motorSpeed){
     digitalWrite(MOTOR_IN1_PIN, LOW);
     digitalWrite(MOTOR_IN2_PIN, LOW);
     pwmValue = 0;
+    dutyCycle = 0;
   }
 
-  float dutyCycle = (static_cast<float>(pwmValue) / 255.0f) * 100.0f;
   if(PWM_Instance){
     PWM_Instance->setPWM(MOTOR_PWM_PIN, MOTOR_PWM_FREQUENCY, dutyCycle);
   } else {
@@ -169,5 +171,4 @@ void loop(){
   Serial.print(" Motor=");
   Serial.println(motorSpeed);
 
-  delay(100);
 }
