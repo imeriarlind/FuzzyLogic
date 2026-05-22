@@ -1,6 +1,6 @@
 #include <FuzzyLibrary.h>
 #include <math.h>
-#include "AVR_PWM.h"
+#include <AVR_PWM.h>
 
 const uint8_t POT_PIN = A5;
 const uint8_t US_TRIG_PIN = 5;
